@@ -36,15 +36,6 @@ app.post('/tutorize',(req,res)=>{
 app.post('/register',(req,res)=>{
     const {email, username, password,phone,birth_date,
         street_addr,city,state,zip} = req.body;
-    // console.log(email);
-    // console.log(username);
-    // console.log(password);
-    // console.log(phone);
-    // console.log(birth_date);
-    // console.log(street_addr);
-    // console.log(city);
-    // console.log(state);
-    // console.log(zip);
     const salt = bcrypt.genSaltSync(11);
     const pwCrypt = bcrypt.hashSync(password,salt);
     const fullname = username.split(' ')
@@ -112,9 +103,31 @@ app.post('/signin',(req,res)=>{
   }
 );
 
-//res.json(data[0].username
-// // app.post('/signin',(req,res)=>{
-// //     console.log(req.body)
-// // })
+app.post('/updateacct',(req,res)=>{
+    const {phone,birth_date,
+        street_addr,city,state,zip,alt_phone,
+        alt_birth_date,alt_street_addr,alt_city,
+        alt_state,alt_zip} = req.body;
+})
+
+app.post('/getacct',(req,res)=>{
+    const {email} = req.body;
+    db.select('*')
+    .from('users')
+    .where('email','=',email)
+    .then(data=>{
+        if (data.length == 0){
+            res.json('Retrieval error')
+        }
+        else {
+            db.select('*')
+            .from('users_addtl')
+            .where('id','=',data[0].id)
+            .then(entry=>{
+                res.json(entry[0])
+            });
+        }
+    })
+})
 
 app.listen(3000)
