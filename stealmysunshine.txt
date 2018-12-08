@@ -5,16 +5,12 @@
 --     hours INTEGER NOT NULL
 -- );
 
-
-
 -- CREATE TABLE users(
 --     id INTEGER PRIMARY KEY NOT NULL,
 --     email VARCHAR(50) UNIQUE NOT NULL,
 --     firstname VARCHAR(50) NOT NULL,
 --     lastname VARCHAR(50),
---     member_type VARCHAR(7),
---     FOREIGN KEY (id) REFERENCES login (id),
---     FOREIGN KEY (email) REFERENCES login (email)
+--     member_type VARCHAR(7)
 -- );
 
 -- CREATE TABLE login(
@@ -32,26 +28,20 @@
 --     bill_addr VARCHAR(255),
 --     city VARCHAR(50) NOT NULL,
 --     state VARCHAR(2) NOT NULL,
---     zip VARCHAR(5) NOT NULL,
---     FOREIGN KEY (id) REFERENCES login (id)
+--     zip VARCHAR(5) NOT NULL
 -- );
 
 -- CREATE TABLE notif(
 --     notif_id serial PRIMARY KEY,
 --     recip_id INTEGER NOT NULL,
---     mesg VARCHAR(100),
---     FOREIGN KEY (recip_id) REFERENCES login (id)
+--     mesg VARCHAR(100)
 -- );
 
 -- CREATE TABLE study(
 --     study_id serial PRIMARY KEY,
 --     tutor_id INTEGER NOT NULL,
 --     student_id INTEGER NOT NULL,
---     subject INTEGER NOT NULL,
---     course VARCHAR(60),
---     FOREIGN KEY (student_id) REFERENCES login (id),
---     FOREIGN KEY (tutor_id) REFERENCES login (id),
---     FOREIGN KEY (subject) REFERENCES subjects (id)
+--     course VARCHAR(60)
 -- );
 
 -- CREATE TABLE session(
@@ -66,32 +56,18 @@
 --     week_of DATE NOT NULL,
 --     verified BOOLEAN NOT NULL   
 -- );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- CREATE TABLE subjects(
 --     id serial PRIMARY KEY,
 --     name VARCHAR(50)
 -- );
 
--- CREATE TABLE expertise(
---     tutor_id INTEGER NOT NULL,
---     subject INTEGER NOT NULL,
---     level VARCHAR(20),
---     FOREIGN KEY (subject) REFERENCES subjects (id),
---     PRIMARY KEY (tutor_id,subject)
--- );
+CREATE TABLE expertise(
+    tutor_id INTEGER NOT NULL,
+    subject INTEGER NOT NULL,
+    level VARCHAR(20),
+    FOREIGN KEY (subject) REFERENCES subjects (id),
+    PRIMARY KEY (tutor_id,subject)
+);
 
 -- INSERT INTO subjects (name) VALUES('Literature');
 
