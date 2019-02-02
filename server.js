@@ -132,22 +132,16 @@ app.post('/updateacct',(req,res)=>{
 app.post('/addtutorsubj',(req,res)=>{
     const {id,subj,lvl} = req.body;
     db.transaction(trx => {
-        trx.select('id')
-        .from('subjects')
-        .where('name','=',subj)
-        .then(ret =>{
-            return trx('expertise')
-                    .returning('*')
-                    .insert({
-                        tutor_id: id,
-                        subject: ret[0].id,
-                        level: lvl
-                    })
-                    .then(ret => {
-                        res.json(ret);
-                    })
-            }
-        )
+        trx('expertise')
+        .returning('*')
+        .insert({
+            tutor_id: id,
+            subject: subj,
+            level: lvl
+        })
+        .then(ret => {
+            res.json(ret);
+        })
         .then(trx.commit)
         .catch(trx.rollback)
         })
@@ -155,10 +149,13 @@ app.post('/addtutorsubj',(req,res)=>{
 })
 
 app.post('/rmtutorsubj',(req,res)=>{
-    const {id,subj,lvl} = req.body;
+    const {id,subj} = req.body;
     db.transaction(trx => {
         trx('expertise')
-        .where('subject','=',subj)
+        .where({
+            tutor_id: id,
+            subject: subj.substr(0,subj.length-1)
+          })
         .del()
         .then(ret =>{
             res.json(ret);
@@ -232,6 +229,16 @@ app.post('/getstudents',(req,res)=>{
 app.get('/getallsubj',(req,res)=>{
     db.select('name')
     .from('subjects')
+    .then(entry=>{
+        res.json(entry);
+    });
+})
+
+
+app.get('/getalltutors',(req,res)=>{
+    db.select('firstname','lastname','email')
+    .from('users')
+    .where('member_type','=','tutor')
     .then(entry=>{
         res.json(entry);
     });
@@ -319,5 +326,20 @@ app.post('/verify',(req,res)=>{
     })
     }
 )
+
+app.post('/search',(req,res)=>{
+    const {id} = req.body;
+    db.select('expertise.subject','expertise.level','user.id','user.email','user.firstname','user.lastname')
+    .from('expertise')
+    .innerJoin('users','expertise.tutor_id','=','users.id')
+    .orderBy('session.week_of','desc')
+    .then(entry=>{
+        console.log(entry)
+    }
+    )
+    }
+)
+
+
 
 app.listen(3000)

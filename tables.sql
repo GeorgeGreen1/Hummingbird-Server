@@ -87,9 +87,9 @@
 
 -- CREATE TABLE expertise(
 --     tutor_id INTEGER NOT NULL,
---     subject INTEGER NOT NULL,
+--     subject VARCHAR(20),
 --     level VARCHAR(20),
---     FOREIGN KEY (subject) REFERENCES subjects (id),
+--     FOREIGN KEY (tutor_id) REFERENCES users (id)
 --     PRIMARY KEY (tutor_id,subject)
 -- );
 
