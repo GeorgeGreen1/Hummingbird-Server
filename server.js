@@ -106,7 +106,7 @@ app.post('/signin',(req,res)=>{
 
 app.post('/updateacct',(req,res)=>{
     const {meetAddress,city,zip,states,
-           phone,billAddress,alt_phone,id} = req.body;
+           phone,billAddress,alt_phone,id,descr} = req.body;
     //Username existence and password validity is checked here
     db('users_addtl')
     .where('id','=',id)
@@ -118,13 +118,23 @@ app.post('/updateacct',(req,res)=>{
                 state: states,
                 zip: zip})
     .then(()=>{
-        db.select('meet_addr','city','zip','state','phone','bill_addr','alt_phone')
+        db('tutor_description')
+        .where('tutor_id','=',id)
+        .update({
+            description: descr
+        })
+        .then(()=>{
+        db.select('users_addtl.meet_addr','users_addtl.city','users_addtl.zip','users_addtl.state','users_addtl.phone',
+                'users_addtl.bill_addr','users_addtl.alt_phone','tutor_description.description')
         .from('users_addtl')
-        .where('id','=', data[0].id)
+        .leftJoin('tutor_description','users_addtl.id','tutor_description.tutor_id')
+        .where('id','=', id)
         .then(data=>{
             res.json(data[0])
-        })
-    });
+        }
+        )}
+        )
+    })
 })
 
 
@@ -177,6 +187,97 @@ app.post('/getacct',(req,res)=>{
     });
 })
 
+app.post('/getprofileinfo',(req,res)=>{
+    const {id,member_type,querier_type} = req.body;
+    db.select('users.id','users.firstname','users.lastname','users.email','users.member_type')
+    .from('users')
+    .where('users.id','=',id)
+    .then(entry=>{
+        let user = entry[0];
+        if (querier_type === 'admin'){
+            if (user.member_type === 'tutor'){
+                db.select('users_addtl.phone', 
+                        'users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip',
+                        knex.raw('ARRAY_AGG(expertise.subject) as subject'),knex.raw('ARRAY_AGG(expertise.level) as level')) 
+                        .from('users_addtl')
+                        .leftJoin('expertise','users_addtl.id','expertise.tutor_id')
+                        .where('users_addtl.id','=',user.id)
+                        .groupBy('users_addtl.phone','users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip')
+                        .then(entryTwo=>{
+                            db.select('description') 
+                            .from('tutor_description')
+                            .where('tutor_description.tutor_id','=',user.id)
+                            .then(desc=>{
+                            entryTwo[0].id = user.id;
+                            entryTwo[0].member_type = user.member_type;
+                            entryTwo[0].firstname = user.firstname;
+                            entryTwo[0].lastname = user.lastname;
+                            entryTwo[0].email = user.email; 
+                            entryTwo[0].description = (desc[0]===undefined)?"":desc[0].description;
+                            res.json(entryTwo);
+                            })
+                        })
+            } else {
+                db.select('users_addtl.phone', 
+                'users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip') 
+                .from('users_addtl')
+                .where('users_addtl.id','=',user.id)
+                .then(entryTwo=>{
+                    entryTwo[0].id = user.id;
+                    entryTwo[0].member_type = user.member_type;
+                    entryTwo[0].firstname = user.firstname;
+                    entryTwo[0].lastname = user.lastname;
+                    entryTwo[0].email = user.email;
+                    res.json(entryTwo);
+                })
+            }
+        }else{
+            if (user.member_type === 'tutor'){
+                db.select('users_addtl.phone', 
+                        'users_addtl.city','users_addtl.state','users_addtl.zip',
+                        knex.raw('ARRAY_AGG(expertise.subject) as subject'),knex.raw('ARRAY_AGG(expertise.level) as level')) 
+                        .from('users_addtl')
+                        .leftJoin('expertise','users_addtl.id','expertise.tutor_id')
+                        .where('users_addtl.id','=',user.id)
+                        .groupBy('users_addtl.phone','users_addtl.city','users_addtl.state','users_addtl.zip')
+                        .then(entryTwo=>{
+                            entryTwo[0].id = user.id;
+                            entryTwo[0].member_type = user.member_type;
+                            entryTwo[0].firstname = user.firstname;
+                            entryTwo[0].lastname = user.lastname;
+                            entryTwo[0].email = user.email;
+                            res.json(entryTwo);
+                        })
+            } else {
+                db.select('users_addtl.phone', 
+               'users_addtl.city','users_addtl.state','users_addtl.zip') 
+                .from('users_addtl')
+                .where('users_addtl.id','=',user.id)
+                .then(entryTwo=>{
+                    entryTwo[0].id = user.id;
+                    entryTwo[0].member_type = user.member_type;
+                    entryTwo[0].firstname = user.firstname;
+                    entryTwo[0].lastname = user.lastname;
+                    entryTwo[0].email = user.email;
+                    res.json(entryTwo);
+                })
+            }
+        }
+    })
+    // db.select('users.id','users.firstname','users.lastname','users.email','users_addtl.phone',
+    //         'users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip',
+    //         knex.raw('ARRAY_AGG(expertise.subject) as subject'),knex.raw('ARRAY_AGG(expertise.level) as level'))
+    // .from('users')
+    // .leftJoin('expertise','users.id','expertise.tutor_id')
+    // .leftJoin('users_addtl','users.id','users_addtl.id')
+    // .where('users.id','=',id)
+    // .groupBy('users.id','users_addtl.phone','users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip',)
+    // .then(entry=>{
+    //     console.log(entry);
+    //     res.json(entry);
+    // });
+})
+
 app.post('/getnotif',(req,res)=>{
     const {id} = req.body;
     db.select('*')
@@ -189,7 +290,7 @@ app.post('/getnotif',(req,res)=>{
 
 app.post('/gettutors',(req,res)=>{
     const {id} = req.body;
-    db.select('course','firstname','email')
+    db.select('id','course','firstname','lastname','email')
     .from('study','users')
     .innerJoin('users','users.id','study.tutor_id')
     .where('student_id','=',id)
@@ -214,6 +315,7 @@ removeDup = (arr) => {
     return no_dup;
 }
 
+// This may be changeable to use group by instead of removedup
 app.post('/getstudents',(req,res)=>{
     const {id} = req.body;
     db.select('id','tutor_id','firstname','lastname')
@@ -235,20 +337,23 @@ app.get('/getallsubj',(req,res)=>{
 })
 
 
+
+// Make sure this works, put the subj and levels altogether on the frontend
 app.get('/getalltutors',(req,res)=>{
-    db.select('firstname','lastname','email')
+    db.select('id','firstname','lastname','email',knex.raw('ARRAY_AGG(expertise.subject) as subject'),knex.raw('ARRAY_AGG(expertise.level) as level'))
     .from('users')
+    .innerJoin('expertise','users.id','expertise.tutor_id')
     .where('member_type','=','tutor')
+    .groupBy('users.id')
     .then(entry=>{
-        res.json(entry);
-    });
+        res.json(entry)
+    })
 })
 
 app.post('/getmysubjects',(req,res)=>{
     const {id} = req.body;
-    db.select('name','level')
-    .from('expertise','subjects')
-    .innerJoin('subjects','subjects.id','expertise.subject')
+    db.select('subject','level')
+    .from('expertise')
     .where('tutor_id','=',id)
     .then(entry=>{
         res.json(entry);
@@ -302,18 +407,86 @@ app.post('/addsession',(req,res)=>{
     })
 })
 
-app.post('/getsession',(req,res)=>{
+app.post('/getallsessions',(req,res)=>{
     const {id} = req.body;
-    db.select('session.date','session.week_of','session.subject','session.course','session.hours','session.verified','users.firstname','users.lastname')
+    let dt;
+    db.select('session.date','session.week_of','session.subject','session.comment','session.course','session.hours','session.verified','users.firstname','users.lastname')
     .from('session')
     .innerJoin('users','session.student_id','=','users.id')
     .orderBy('session.week_of','desc')
+    .limit(5)
     .then(entry=>{
+        for (let i = 0; i<entry.length; i++){
+            dt = new Date(entry[i].date);
+            entry[i].date = (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+        }
         res.json(entry)
     })
     }
 )
 
+app.post('/getunverifiedsessions',(req,res)=>{
+    const {id} = req.body;
+    let dt;
+    db.select('session.date','session.week_of','session.subject','session.comment','session.course','session.hours','session.verified','users.firstname','users.lastname')
+    .from('session')
+    .innerJoin('users','session.student_id','=','users.id')
+    .orderBy('session.week_of','desc')
+    .where('verified','=',false)
+    .then(entry=>{
+        for (let i = 0; i<entry.length; i++){
+            dt = new Date(entry[i].date);
+            entry[i].date = (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+        }
+        res.json(entry)
+    })
+    }
+)
+// Get verified sessions
+app.post('/getuserverifiedsessions',(req,res)=>{
+    const {id} = req.body;
+    let dt;
+    let tutorSessions = {};
+    db.select('session.date','session.week_of','session.subject','session.comment','session.course','session.hours','session.verified','users.firstname','users.lastname')
+    .from('session')
+    .innerJoin('users','session.student_id','=','users.id')
+    .orderBy('session.date','desc')
+    .where({
+        tutor_id: id,
+        verified: true
+    })
+    .then(entry=>{
+        db.select('firstname','lastname')
+        .from('users')
+        .where('id','=',id)
+        .then(tutor=>{
+            for (let i = 0; i<entry.length; i++){
+                dt = new Date(entry[i].date);
+                entry[i].date = (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+            }
+            tutorSessions.sessions = entry;
+            tutorSessions.name = tutor[0].firstname + " " + tutor[0].lastname;
+            res.json(tutorSessions)
+        })
+    })
+})
+
+// Get all verified sessions
+app.get('/getallverifiedsessions',(req,res)=>{
+    let dt;
+    db.select('session.date','session.hours','users.firstname','users.lastname','users.id')
+    .from('session')
+    .innerJoin('users','session.tutor_id','=','users.id')
+    .orderBy('session.date','desc')
+    .where('verified','=',true)
+    .then(entry=>{
+        for (let i = 0; i<entry.length; i++){
+            dt = new Date(entry[i].date);
+            entry[i].date = (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+        }
+        res.json(entry)
+    })
+})
 
 app.post('/verify',(req,res)=>{
     const {week} = req.body;
@@ -339,6 +512,50 @@ app.post('/search',(req,res)=>{
     )
     }
 )
+
+app.post('/jobpost',(req,res) =>{
+    const {id,school,course,lvl,subject,comments} = req.body;
+    const dt = new Date();
+    db.transaction(trx => {
+        db.select('firstname','lastname')
+        .from('users')
+        .where('id','=',id)
+        .then(user_name =>{
+            console.log(req.body);
+            return (
+                trx.insert({
+                        user_id: id,
+                        stud_name: user_name[0].firstname + " " + user_name[0].lastname,
+                        school: school,
+                        course: course,
+                        subject: subject,
+                        level: lvl,
+                        comments: comments,
+                        date: dt
+                    })
+                    .into('job_postings')
+                    .returning('')
+                    .then(()=>{
+                        res.json(user_name);
+                    }))
+        })
+        .then(trx.commit)
+        .catch(trx.rollback)
+        })
+        .catch(item => {
+            console.log(item);
+            res.status(400).json('invalid')});
+    }
+)
+
+app.get('/getpostings',(req,res)=>{
+    db.select('user_id','stud_name','course','school','subject','comments','level','date')
+    .from('job_postings')
+    .orderBy('date','desc')
+    .then(entries=>{
+        res.json(entries);
+    });
+})
 
 
 
