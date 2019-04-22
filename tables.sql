@@ -27,23 +27,23 @@
 --  15 | 952-443-4137 |           | 19960417   | 6344 Wilryan Avenue    | Billy Avenue           | Edina       | MN    | 55436
 -- (11 rows)
 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(2,'123-555-5555','1970-01-01','Monster Jam University','1001 Grave Digger Road','Toledo','OH','12010'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(3,'139-294-0194','1968-02-02','Team Scream House','3010 YEAAAAAAH Street','Columbus','MI','95021'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(4,'104-494-4441','1982-08-19','Zombie Graveyard','0491 Ohh Bari Blv','Orlando','FL','29554'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(5,'999-999-9999','1984-03-12','Monster Energy HQ','909 Indies Suck Rd','Phoenix','AZ','99014'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(6,'303-404-1001','1997-10-12','Somewhere in Iowa','1010 Blue Thunder Ave','Oscaloosa','IA','10301'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(7,'333-333-3333','1990-02-14','Le Quebec Shop','333 Queix Vouis Rd','Montreal','CA','11111'); 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(12,'100-100-1000','1989-05-04','Alien UFO','5555 UFO Rd','Corn Field','NE','34852'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(2,'123-555-5555','1970-01-01','Monster Jam University','1001 Grave Digger Road','Toledo','OH','12010'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(3,'139-294-0194','1968-02-02','Team Scream House','3010 YEAAAAAAH Street','Columbus','MI','95021'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(4,'104-494-4441','1982-08-19','Zombie Graveyard','0491 Ohh Bari Blv','Orlando','FL','29554'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(5,'999-999-9999','1984-03-12','Monster Energy HQ','909 Indies Suck Rd','Phoenix','AZ','99014'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(6,'303-404-1001','1997-10-12','Somewhere in Iowa','1010 Blue Thunder Ave','Oscaloosa','IA','10301'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(7,'333-333-3333','1990-02-14','Le Quebec Shop','333 Queix Vouis Rd','Montreal','CA','11111'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(12,'100-100-1000','1989-05-04','Alien UFO','5555 UFO Rd','Corn Field','NE','34852'); 
 
-INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
-            VALUES(1,'123-555-5555','1987-01-01','Monster Jam University','1 Goldberg Ave','Paxton','IL','11010'); 
+-- INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,zip) 
+--             VALUES(1,'123-555-5555','1987-01-01','Monster Jam University','1 Goldberg Ave','Paxton','IL','11010'); 
 -- CREATE TABLE users_addtl(
 --     id INTEGER PRIMARY KEY NOT NULL,
 --     phone VARCHAR(12) NOT NULL,
@@ -76,29 +76,28 @@ INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,z
 -- );
 
 -- CREATE TABLE session(
---     session_id serial PRIMARY KEY,
 --     date DATE NOT NULL,
---     student_id INTEGER NOT NULL,
+--     start_time VARCHAR(5) NOT NULL,
+--     end_time VARCHAR(5) NOT NULL,
 --     tutor_id INTEGER NOT NULL,
+--     student_id INTEGER NOT NULL,
 --     subject VARCHAR(60),
---     course VARCHAR(60),
---     comment VARCHAR(200),
---     hours INTEGER NOT NULL,
---     week_of DATE NOT NULL,
---     verified BOOLEAN NOT NULL   
+--     PRIMARY KEY (tutor_id,student_id,date,start_time)
 -- );
 
 
+-- CREATE TABLE log_connection(
+--     tutor_id INTEGER NOT NULL,
+--     student_id INTEGER NOT NULL,    
+--     log_date DATE NOT NULL
+--     PRIMARY KEY (tutor_id,student_id)
+-- )
 
 
-
-
-
-
-
-
-
-
+-- CREATE TABLE tutor_square(
+--     tutor_id INTEGER NOT NULL,
+--     employee_id VARCHAR(20)
+-- );
 
 
 -- CREATE TABLE subjects(
@@ -133,7 +132,8 @@ INSERT INTO users_addtl (id,phone,birth_date, meet_addr, bill_addr,city, state,z
 --     PRIMARY KEY (tutor_id,subject)
 -- );
 
--- INSERT INTO subjects (name) VALUES('Literature');
+-- INSERT INTO tutor_square (tutor_id,employee_id) VALUES(16,'gHnTnJJjhiKrw6MYZlMK');
+
 
 -- DROP TABLE users;
 -- DROP TABLE users_addtl;

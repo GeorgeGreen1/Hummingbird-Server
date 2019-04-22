@@ -3,6 +3,14 @@ const bodyparser = require('body-parser');
 const cors = require('cors');
 const knex = require('knex');
 const bcrypt = require('bcrypt');
+const SquareConnect = require('square-connect');
+const defaultClient = SquareConnect.ApiClient.instance;
+
+var oauth2 = defaultClient.authentications['oauth2'];
+oauth2.accessToken = 'EAAAEPGvGJyi8kDABbj3JRf9GD1M14aCZ5ZBfNkyh4zX8RowEn086CuV1iNxm1aY';
+
+
+
 
 //Enable express
 const app = express();
@@ -222,7 +230,7 @@ app.post('/getprofileinfo',(req,res)=>{
                 'users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip') 
                 .from('users_addtl')
                 .where('users_addtl.id','=',user.id)
-                .then(entryTwo=>{
+                .then(entryTwo=>{`22 `
                     entryTwo[0].id = user.id;
                     entryTwo[0].member_type = user.member_type;
                     entryTwo[0].firstname = user.firstname;
@@ -264,18 +272,6 @@ app.post('/getprofileinfo',(req,res)=>{
             }
         }
     })
-    // db.select('users.id','users.firstname','users.lastname','users.email','users_addtl.phone',
-    //         'users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip',
-    //         knex.raw('ARRAY_AGG(expertise.subject) as subject'),knex.raw('ARRAY_AGG(expertise.level) as level'))
-    // .from('users')
-    // .leftJoin('expertise','users.id','expertise.tutor_id')
-    // .leftJoin('users_addtl','users.id','users_addtl.id')
-    // .where('users.id','=',id)
-    // .groupBy('users.id','users_addtl.phone','users_addtl.bill_addr','users_addtl.city','users_addtl.state','users_addtl.zip',)
-    // .then(entry=>{
-    //     console.log(entry);
-    //     res.json(entry);
-    // });
 })
 
 app.post('/getnotif',(req,res)=>{
@@ -407,14 +403,16 @@ app.post('/addsession',(req,res)=>{
     })
 })
 
-app.post('/getallsessions',(req,res)=>{
+app.post('/getstudentsessions',(req,res)=>{
     const {id} = req.body;
     let dt;
-    db.select('session.date','session.week_of','session.subject','session.comment','session.course','session.hours','session.verified','users.firstname','users.lastname')
+    db.select('session.date','session.subject','users.firstname','users.lastname','users.email')
     .from('session')
-    .innerJoin('users','session.student_id','=','users.id')
-    .orderBy('session.week_of','desc')
-    .limit(5)
+    .innerJoin('users','session.tutor_id','=','users.id')
+    .orderBy('session.date','desc')
+    .where({
+        student_id: id,
+    })
     .then(entry=>{
         for (let i = 0; i<entry.length; i++){
             dt = new Date(entry[i].date);
@@ -424,6 +422,24 @@ app.post('/getallsessions',(req,res)=>{
     })
     }
 )
+
+app.post('/gettutorconnections',(req,res)=>{
+    const {id} = req.body;
+    let dt;
+    db.select('student_id')
+    .from('log_connection')
+    .where('tutor_id','=',id)
+    .then(entry=>{
+        db.select('users.email','users.firstname','users.lastname')
+        .from('users')
+        .whereIn('id',entry.map(item=>{return item.student_id}))
+        .then(entry_alpha=>{
+            res.json(entry_alpha)
+        })
+    })
+    }
+)
+
 
 app.post('/getunverifiedsessions',(req,res)=>{
     const {id} = req.body;
@@ -557,6 +573,184 @@ app.get('/getpostings',(req,res)=>{
     });
 })
 
+const open_shifts_request = (id) =>{
+    var shift_query = new SquareConnect.ShiftQuery();
+    var shift_filter = new SquareConnect.ShiftFilter();
+    var search_shifts_request = new SquareConnect.SearchShiftsRequest();
+    shift_filter['employee_id'] = Array(id);
+    shift_filter['status'] = "OPEN";
+    shift_query['filter'] = shift_filter;
+    search_shifts_request['query'] = shift_query;
+    return search_shifts_request;
+}
 
+const build_shift_obj = (id,rate,date,start_time,end_time) => {
+    var shift = new SquareConnect.Shift();
+    var shift_wage = new SquareConnect.ShiftWage();
+    var dt = new Date(date);
+    var start = start_time.split(':');
+    var end = end_time.split(':');
+    shift['employee_id'] = id;
+    shift['location_id'] = "GPW35V7F3C52M";
+    shift['start_at'] = new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),parseInt(start[0]),parseInt(start[1]));
+    // Cross date
+    if (parseInt(end[0])<parseInt(start[0])){
+        dt.setDate(dt.getDate()+1);    
+    }
+    shift['end_at'] = new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),parseInt(end[0]),parseInt(end[1]));
+    shift_wage['hourly_rate'] = rate;
+    shift_wage['title'] = 'Tutor';
+    shift['wage'] = shift_wage;
+    return shift;
+}
+
+app.post('/log-shift',(req,res)=>{
+    const {id,start_time,end_time} = req.body;
+    const employees_api = new SquareConnect.EmployeesApi();
+    const labor_api = new SquareConnect.LaborApi();
+    var idempotency_key = require('crypto').randomBytes(64).toString('hex');
+    var wage_params = {
+        employeeId: id
+    }
+    labor_api.listEmployeeWages(wage_params).then(entry=>{
+         var emp_rate = entry.employee_wages[0].hourly_rate;
+         var body = new SquareConnect.CreateShiftRequest();
+         body['shift'] = build_shift_obj(id,emp_rate);
+         body['idempotency_key'] = idempotency_key;
+         labor_api.createShift(body).then(ret=>{
+            db.transaction(trx => {
+                trx.insert({
+                    date: date,
+                    subject: subject,
+                    student_id: student_id,
+                    tutor_id: tutor_id,
+                    course: course,
+                    hours: hours,
+                    comment: comments,
+                    week_of: getWeekMark(dt),
+                    verified: verified
+                })
+                .into('session')
+                .returning('*')
+                .then(entry => {
+                    res.json(entry);
+                })
+                .then(trx.commit)
+                .catch(trx.rollback)
+            })
+         })
+    })
+    }
+)
+
+app.post('/logsession',(req,res)=>{
+    const {tutor_id,start_time,end_time,
+            subject,email,date} = req.body;
+    const employees_api = new SquareConnect.EmployeesApi();
+    const labor_api = new SquareConnect.LaborApi();
+    var idempotency_key = require('crypto').randomBytes(64).toString('hex');
+    var logDate = new Date(date);
+    db.select('employee_id')
+    .from('tutor_square')
+    .where('tutor_id','=',tutor_id)
+    .then(entry =>{
+            var wage_params = {
+                employeeId: entry[0].employee_id
+            }
+            labor_api.listEmployeeWages(wage_params).then(wage=>{   
+                var emp_rate = wage.employee_wages[0].hourly_rate;
+                var employee_id = entry[0].employee_id;
+                var body = new SquareConnect.CreateShiftRequest();
+               body['shift'] = build_shift_obj(employee_id,emp_rate,date,start_time,end_time);
+               body['idempotency_key'] = idempotency_key;
+               labor_api.createShift(body).then(ret=>{
+                    db.select('id')
+                    .from('users')
+                    .where('email','=',email)
+                    .then(user=> {
+                        db.transaction(trx => {
+                            trx.insert({
+                                date: logDate,
+                                subject: subject,
+                                student_id: user[0].id,
+                                tutor_id: tutor_id,
+                                start_time: start_time,
+                                end_time: end_time
+                            })
+                            .into('session')
+                            .returning('*')
+                            .then(item => {
+                                return trx.select('*')
+                                .from('log_connection')
+                                .where({
+                                    student_id: user[0].id,
+                                    tutor_id: tutor_id
+                                })
+                                .then(log=>{
+                                    if (log[0] === undefined){
+                                        return trx('log_connection')
+                                        .returning('*')
+                                        .insert({
+                                            log_date: logDate,
+                                            student_id: user[0].id,
+                                            tutor_id: tutor_id
+                                        })
+                                        .then(ret=>{
+                                            res.json(ret);
+                                        })
+                                    }
+                                    else{
+                                        return trx('log_connection')
+                                        .where('log_date','=',log[0].log_date)
+                                        .update({
+                                            log_date: logDate,
+                                        })
+                                        .then(ret=>{
+                                            res.json(ret);
+                                        })
+                                    }
+                                })
+                            })
+                            .then(trx.commit)
+                            .catch(trx.rollback)
+                        })
+                    }
+                    )
+               })
+        })
+    })
+})
+
+// Square Payment
+app.post('/process-payment',(req,res)=>{
+	var request_params = req.body;
+
+	var idempotency_key = require('crypto').randomBytes(64).toString('hex');
+
+	// Charge the customer's card
+	var transactions_api = new SquareConnect.TransactionsApi();
+	var request_body = {
+		card_nonce: request_params.nonce,
+		amount_money: {
+			amount: 1, // $1.00 charge
+			currency: 'USD'
+		},
+		idempotency_key: idempotency_key
+    };
+    console.log("Json")
+	transactions_api.charge("GPW35V7F3C52M", request_body).then(function(data) {
+		var json= JSON.stringify(data);
+		res.json({
+			'title': 'Payment Successful',
+			'result': json
+		});
+	}, function(error) {
+		res.json({
+			'title': 'Payment Failure',
+			'result': error.response.text
+		});
+	});
+
+});
 
 app.listen(3000)
