@@ -5,6 +5,19 @@
 --     hours INTEGER NOT NULL
 -- );
 
+-- CREATE TABLE tutor_bg(
+--     tutor_id INTEGER NOT NULL,
+--     edu_earned INTEGER NOT NULL,
+--     years_exp INTEGER NOT NULL,
+--     description VARCHAR(400) NOT NULL,
+--     FOREIGN KEY (tutor_id) REFERENCES login (id)
+-- );
+
+CREATE TABLE student_hours(
+    user_id INTEGER PRIMARY KEY NOT NULL,
+    hours_remaining INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES login (id)
+);
 
 
 -- CREATE TABLE users(
@@ -16,6 +29,7 @@
 --     FOREIGN KEY (id) REFERENCES login (id),
 --     FOREIGN KEY (email) REFERENCES login (email)
 -- );
+
 
 -- CREATE TABLE login(
 --     id serial PRIMARY KEY,
@@ -58,13 +72,22 @@
 -- );
 
 -- CREATE TABLE notif(
---     notif_id serial PRIMARY KEY,
 --     recip_id INTEGER NOT NULL,
 --     mesg VARCHAR(100),
+--     time TIMESTAMP NOT NULL,
 --     FOREIGN KEY (recip_id) REFERENCES login (id)
 -- );
 
--- CREATE TABLE study(
+
+-- CREATE TABLE match(
+--     tutor_id INTEGER NOT NULL,
+--     student_id INTEGER NOT NULL,
+--     FOREIGN KEY (student_id) REFERENCES login (id),
+--     FOREIGN KEY (tutor_id) REFERENCES login (id)
+-- );
+
+
+-- CREATE TABLE study(ff
 --     study_id serial PRIMARY KEY,
 --     tutor_id INTEGER NOT NULL,
 --     student_id INTEGER NOT NULL,
@@ -105,6 +128,35 @@
 --     name VARCHAR(50)
 -- );
 
+-- CREATE TABLE user_settings(
+--     user_id INTEGER PRIMARY KEY,
+--     notify_match BOOLEAN,
+--     display_email BOOLEAN,
+--     FOREIGN KEY (user_id) REFERENCES users (id)
+-- );
+
+
+-- CREATE TABLE tutor_settings(
+--     user_id INTEGER PRIMARY KEY,
+--     match_available BOOLEAN,
+--     FOREIGN KEY (user_id) REFERENCES users (id)
+-- );
+
+
+-- CREATE TABLE student_settings(
+--     user_id INTEGER PRIMARY KEY,
+    
+--     FOREIGN KEY (user_id) REFERENCES users (id)
+-- );
+
+-- CREATE TABLE nflteams(
+--     name VARCHAR(50),
+--     abbrev VARCHAR(3),
+--     division VARCHAR(4),
+--     head_coach VARCHAR(50),
+--     location VARCHAR(50),
+--     stadium VARCHAR(50)
+-- );
 -- CREATE TABLE job_postings(
 --     request_id serial PRIMARY KEY,
 --     user_id INTEGER NOT NULL,
@@ -127,12 +179,14 @@
 -- CREATE TABLE expertise(
 --     tutor_id INTEGER NOT NULL,
 --     subject VARCHAR(20),
---     level VARCHAR(20),
---     FOREIGN KEY (tutor_id) REFERENCES users (id)
+--     level INTEGER NOT NULL,
+--     FOREIGN KEY (tutor_id) REFERENCES users (id),
 --     PRIMARY KEY (tutor_id,subject)
 -- );
 
 -- INSERT INTO tutor_square (tutor_id,employee_id) VALUES(16,'gHnTnJJjhiKrw6MYZlMK');
+-- INSERT INTO user_settings (user_id,notify_match,display_email) VALUES(5,false,false);
+-- INSERT INTO tutor_settings (user_id,match_available) VALUES(5,false);
 
 
 -- DROP TABLE users;
