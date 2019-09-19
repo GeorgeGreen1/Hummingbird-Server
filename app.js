@@ -177,7 +177,7 @@ app.post('/updateacct',(req,res)=>{
 
 
 app.post('/addtutorsubj',(req,res)=>{
-    const {id,subj,lvl} = req.body;
+    const {id,subj,lvl,member_type} = req.body;
     db.transaction(trx => {
         trx('expertise')
         .returning('*')
@@ -187,6 +187,13 @@ app.post('/addtutorsubj',(req,res)=>{
             level: lvl
         })
         .then(ret => {
+            if (member_type == 'tutor_exp'){
+                trx('users')
+                .where('id','=',id)
+                .update({
+                    member_type: 'tutor',
+                })
+            }
             res.json(ret);
         })
         .then(trx.commit)
@@ -448,7 +455,7 @@ app.post('/tutorize',(req,res)=>{
     const {user_id} = req.body;
     db('users')
     .where('id','=',user_id)
-    .update({member_type: 'tutor'})
+    .update({member_type: 'tutorx'})
     .then(()=>{
         db.transaction(trx =>
         trx('tutor_bg')
@@ -466,14 +473,14 @@ app.post('/tutorize',(req,res)=>{
                     user_id: user_id,
                     match_available: true
                 })
-                .then(() => {
+                .then(ret => {
                     return trx('student_hours')
                     .where({
                         user_id: user_id
                       })
                     .del()
                     .then(() =>{
-                        res.json();
+                        res.json(ret.user_id);
                     }
                 )
             })
@@ -880,20 +887,22 @@ app.post('/getuserverifiedsessions',(req,res)=>{
     })
 })
 
-// Get all verified sessions
-app.get('/getallverifiedsessions',(req,res)=>{
-    let dt;
-    db.select('session.date','session.hours','users.firstname','users.lastname','users.id')
+// Get all recent sessions
+app.get('/getrecentsessions',(req,res)=>{
+    let dt = new Date();
+    dt.setMonth(dt.getMonth()-6);
+    var resArr = [];
+    db.select('session.date','users.firstname','users.lastname','users.id')
     .from('session')
     .innerJoin('users','session.tutor_id','=','users.id')
     .orderBy('session.date','desc')
-    .where('verified','=',true)
+    .where('session.date','>',dt)
     .then(entry=>{
         for (let i = 0; i<entry.length; i++){
             dt = new Date(entry[i].date);
-            entry[i].date = (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+            resArr.push({date: (dt.getMonth()+1) + '/' + dt.getDate() + '/' + dt.getFullYear(),name:entry[i].firstname + " " + entry[i].lastname});
         }
-        res.json(entry)
+        res.json(resArr)
     })
 })
 
