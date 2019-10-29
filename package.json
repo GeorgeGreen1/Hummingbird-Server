@@ -23,7 +23,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "jsonwebtoken": "^8.5.1",
-    "knex": "^0.15.2",
+    "knex": "^0.19.5",
     "pg": "^7.4.3",
     "square-connect": "^2.20190327.1",
     "xmlhttprequest": "^1.8.0"
